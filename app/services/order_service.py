@@ -1,48 +1,76 @@
-from app.storage import db
+from sqlalchemy.orm import Session
+
+from app.repositories.order_repository import OrderRepository
 
 
+class OrderService:
 
+    def __init__(self, order_repository: OrderRepository):
+        self.order_repository = order_repository
 
+    def create_order(
+        self,
+        db: Session,
+        order_data: dict
+    ):
 
-def create_order(order):
+        if order_data["quantity"] <= 0:
+            raise ValueError("Quantity must be greater than 0")
 
-    if order.user_id not in db.user_db:
-        return None
+        return self.order_repository.create_order(
+            db,
+            order_data
+        )
 
-    order_id = db.next_order_id
+    def get_order(
+        self,
+        db: Session,
+        order_id: int
+    ):
 
-    new_order = {
-        "order_id": order_id,
-        "user_id": order.user_id,
-        "product_name": order.product_name,
-        "quantity": order.quantity,
-        "price": order.price,
-        "status": "pending"
-    }
+        return self.order_repository.get_order(
+            db,
+            order_id
+        )
 
-    db.order_db[order_id] = new_order
+    def get_all_orders(
+        self,
+        db: Session
+    ):
 
-    db.next_order_id += 1
+        return self.order_repository.get_all_orders(db)
 
-    return new_order
-def get_order(order_id):
-    return db.order_db.get(order_id)
-def get_all_orders():
-    return list(db.order_db.values())
-def update_order(order_id, order_update):
-    existing_order = db.order_db.get(order_id)
+    def update_order(
+        self,
+        db: Session,
+        order_id: int,
+        update_data: dict
+    ):
 
-    if not existing_order:
-        return None 
-    update_data =order_update.model_dump(exclude_unset=True)
+        return self.order_repository.update_order(
+            db,
+            order_id,
+            update_data
+        )
 
-    existing_order.update(update_data)
-    return existing_order
-def delete_order(order_id):
-    return db.order_db.pop(order_id, None)
+    def delete_order(
+        self,
+        db: Session,
+        order_id: int
+    ):
 
-def get_user_orders(user_id):
-    orders=[]
-    for order in db.order_db.values():
-        if order["user_id"]==user_id:
-            orders.append(order)
+        return self.order_repository.delete_order(
+            db,
+            order_id
+        )
+
+    def get_orders_by_user(
+        self,
+        db: Session,
+        user_id: int
+    ):
+
+        return self.order_repository.get_orders_by_user(
+            db,
+            user_id
+        )

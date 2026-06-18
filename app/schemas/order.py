@@ -12,7 +12,7 @@ class OrderUpdate(BaseModel):
     quantity: Optional[int] = None
 
 class OrderResponse(BaseModel):
-    order_id: int
+    id: int
     user_id: int
     product_name: str
     quantity: int

@@ -1,4 +1,7 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends
+from sqlalchemy.orm import Session
+
+from app.database.database import get_db
 
 from app.schemas.user import (
     UserCreate,
@@ -6,7 +9,9 @@ from app.schemas.user import (
     UserResponse
 )
 
-from app.services import user_service
+from app.services.user_service import UserService
+from app.repositories.user_repository import UserRepository
+
 
 router = APIRouter(
     prefix="/users",
@@ -14,61 +19,76 @@ router = APIRouter(
 )
 
 
-@router.post("", response_model=UserResponse)
-def create_user(user: UserCreate):
-    return user_service.create_user(user)
+def get_user_service() -> UserService:
+    repository = UserRepository()
+    return UserService(repository)
 
 
-@router.get("", response_model=list[UserResponse])
-def get_all_users():
-    return user_service.get_all_users()
-
-
-@router.get("/{user_id}", response_model=UserResponse)
-def get_user(user_id: int):
-
-    user = user_service.get_user(user_id)
-
-    if not user:
-        raise HTTPException(
-            status_code=404,
-            detail="User not found"
-        )
-
-    return user
-
-
-@router.put("/{user_id}", response_model=UserResponse)
-def update_user(
-    user_id: int,
-    user_update: UserUpdate
+@router.post(
+    "/",
+    response_model=UserResponse
+)
+def create_user(
+    user: UserCreate,
+    db: Session = Depends(get_db),
+    service: UserService = Depends(get_user_service)
 ):
-
-    updated_user = user_service.update_user(
-        user_id,
-        user_update
+    return service.create_user(
+        db,
+        user.model_dump()
     )
 
-    if not updated_user:
-        raise HTTPException(
-            status_code=404,
-            detail="User not found"
-        )
 
-    return updated_user
+@router.get(
+    "/",
+    response_model=list[UserResponse]
+)
+def get_all_users(
+    db: Session = Depends(get_db),
+    service: UserService = Depends(get_user_service)
+):
+    return service.get_all_users(db)
+
+
+@router.get(
+    "/{user_id}",
+    response_model=UserResponse
+)
+def get_user(
+    user_id: int,
+    db: Session = Depends(get_db),
+    service: UserService = Depends(get_user_service)
+):
+    return service.get_user(
+        db,
+        user_id
+    )
+
+
+@router.put(
+    "/{user_id}",
+    response_model=UserResponse
+)
+def update_user(
+    user_id: int,
+    user: UserUpdate,
+    db: Session = Depends(get_db),
+    service: UserService = Depends(get_user_service)
+):
+    return service.update_user(
+        db,
+        user_id,
+        user.model_dump(exclude_unset=True)
+    )
 
 
 @router.delete("/{user_id}")
-def delete_user(user_id: int):
-
-    deleted_user = user_service.delete_user(user_id)
-
-    if not deleted_user:
-        raise HTTPException(
-            status_code=404,
-            detail="User not found"
-        )
-
-    return {
-        "message": "User deleted successfully"
-    }
+def delete_user(
+    user_id: int,
+    db: Session = Depends(get_db),
+    service: UserService = Depends(get_user_service)
+):
+    return service.delete_user(
+        db,
+        user_id
+    )

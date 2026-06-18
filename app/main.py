@@ -1,17 +1,29 @@
 from fastapi import FastAPI
-from app.routers.users import router as user_router
-from app.routers.orders import router as order_router
+
+from app.database.database import Base, engine
+from app.models.user import User
+from app.models.order import Order
+
+from app.routers import users
+from app.routers import orders
+import logging
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s | %(levelname)s | %(name)s | %(message)s"
+)
 
 app = FastAPI(
-    title="Order Management API"
+    title="Order Management System"
 )
-app.include_router(order_router)
 
-app.include_router(user_router)
+# Create tables (only if they don't already exist)
+Base.metadata.create_all(bind=engine)
+
+app.include_router(users.router)
+app.include_router(orders.router)
 
 
 @app.get("/")
 def home():
-    return {
-        "message": "Order Management API is running"
-    }
+    return {"message": "Order Management API Running"}
