@@ -1,45 +1,127 @@
-import logging 
-from app.repositories.user_repository import UserRepository
+"""
+User Service
+
+Responsibilities:
+- Perform business logic.
+- Validate user data.
+- Call the repository layer.
+- Raise custom exceptions when business rules fail.
+
+The service should NOT know anything about FastAPI or HTTP.
+"""
+
 from sqlalchemy.orm import Session
 
-logger = logging.getLogger(__name__)
+from app.repositories.user_repository import UserRepository
+
+from app.exceptions.custom_exceptions import (
+    UserAlreadyExistsException,
+    UserNotFoundException
+)
+
+
 class UserService:
 
-
     def __init__(self, user_repository: UserRepository):
-        self.user_repository = user_repository    
-    def create_user(self, db, user_data):
-        logger.info("Creating a new user with email: %s", user_data["email"])
-        existing_user=self.user_repository.get_user_by_email(db, user_data["email"])
+        """
+        Inject the UserRepository.
+
+        Dependency Injection allows us to easily replace
+        the repository for testing or future implementations.
+        """
+        self.user_repository = user_repository
+
+    # ----------------------------------------------------
+    # Create User
+    # ----------------------------------------------------
+    def create_user(
+        self,
+        db: Session,
+        user_data: dict
+    ):
+
+        # Check whether the email already exists
+        existing_user = self.user_repository.get_user_by_email(
+            db,
+            user_data["email"]
+        )
+
         if existing_user:
-            logger.warning(
-                "User already exists with email: %s",
-                user_data["email"])
-            raise Exception("Email already exists")
+            raise UserAlreadyExistsException()
 
-                    
-        return self.user_repository.create_user(db, user_data)
-    
-    def get_user(self,db,user_id:int):
-        user =self.user_repository.get_user(db,user_id)
+        # Create new user
+        return self.user_repository.create_user(
+            db,
+            user_data
+        )
+
+    # ----------------------------------------------------
+    # Get User
+    # ----------------------------------------------------
+    def get_user(
+        self,
+        db: Session,
+        user_id: int
+    ):
+
+        user = self.user_repository.get_user(
+            db,
+            user_id
+        )
+
         if not user:
-            logger.error("User not found with ID: %s", user_id)
-            raise Exception("User not found")
+            raise UserNotFoundException()
+
         return user
-    def get_all_users(self,db):
+
+    # ----------------------------------------------------
+    # Get All Users
+    # ----------------------------------------------------
+    def get_all_users(
+        self,
+        db: Session
+    ):
+
         return self.user_repository.get_all_users(db)
-    
-    def update_user(self,db,user_id:int,update_data:dict):
-        user=self.user_repository.get_user(db,user_id)
-        if not user:
-            return {"error": "user not found"}
-        return self.user_repository.update_user(db,user_id,update_data)
-    
-    def delete_user(self, db, user_id: int):
 
-        user = self.user_repository.get_user(db, user_id)
+    # ----------------------------------------------------
+    # Update User
+    # ----------------------------------------------------
+    def update_user(
+        self,
+        db: Session,
+        user_id: int,
+        update_data: dict
+    ):
 
-        if not user:
-            return {"error": "User not found"}
+        # Check if user exists
+        self.get_user(
+            db,
+            user_id
+        )
 
-        return self.user_repository.delete_user(db, user_id)
+        return self.user_repository.update_user(
+            db,
+            user_id,
+            update_data
+        )
+
+    # ----------------------------------------------------
+    # Delete User
+    # ----------------------------------------------------
+    def delete_user(
+        self,
+        db: Session,
+        user_id: int
+    ):
+
+        # Check if user exists
+        self.get_user(
+            db,
+            user_id
+        )
+
+        return self.user_repository.delete_user(
+            db,
+            user_id
+        )

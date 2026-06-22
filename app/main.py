@@ -1,29 +1,57 @@
+"""
+Main Entry Point
+"""
+
 from fastapi import FastAPI
 
-from app.database.database import Base, engine
-from app.models.user import User
-from app.models.order import Order
+# -----------------------------
+# Routers
+# -----------------------------
+from app.routers.users import router as user_router
+from app.routers.orders import router as order_router
 
-from app.routers import users
-from app.routers import orders
-import logging
-
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s | %(levelname)s | %(name)s | %(message)s"
+# -----------------------------
+# Custom Exception Handlers
+# -----------------------------
+from app.exceptions.custom_exceptions import AppException
+from app.exceptions.handlers import (
+    app_exception_handler,
+    global_exception_handler
 )
 
+# -----------------------------
+# Create FastAPI Application
+# -----------------------------
 app = FastAPI(
-    title="Order Management System"
+    title="Order Management API",
 )
 
-# Create tables (only if they don't already exist)
-Base.metadata.create_all(bind=engine)
+# -----------------------------
+# Register Global Exception Handlers
+# -----------------------------
+app.add_exception_handler(
+    AppException,
+    app_exception_handler
+)
 
-app.include_router(users.router)
-app.include_router(orders.router)
+app.add_exception_handler(
+    Exception,
+    global_exception_handler
+)
 
+# -----------------------------
+# Register Routers
+# -----------------------------
+app.include_router(user_router)
 
+app.include_router(order_router)
+
+# -----------------------------
+# Root Endpoint
+# -----------------------------
 @app.get("/")
-def home():
-    return {"message": "Order Management API Running"}
+def root():
+
+    return {
+        "message": "Welcome to Order Management API"
+    }
