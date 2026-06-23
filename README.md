@@ -5,9 +5,9 @@ A Python-based order management application built with FastAPI to demonstrate cl
 ## Project Overview
 
 This is a learning project designed to showcase:
-- **Clean Architecture**: Separation of concerns with routers, services, repositories, and models
-- **FastAPI Framework**: Building modern async web APIs
-- **Database Integration**: Using SQLAlchemy ORM for database operations
+- **Clean Architecture**: Separation of concerns with routers, services, repositories, models, and exception handling
+- **FastAPI Framework**: Building modern web APIs with type-safe request/response validation
+- **Database Integration**: Using SQLAlchemy ORM and PostgreSQL via `DATABASE_URL`
 - **Data Validation**: Pydantic schemas for request/response validation
 - **RESTful Design**: Proper HTTP methods and status codes
 
@@ -15,26 +15,34 @@ This is a learning project designed to showcase:
 
 ```
 ordermanagement/
+├── alembic.ini
+├── requirements.txt
 ├── app/
-│   ├── main.py                 # Application entry point
+│   ├── main.py                   # Application entry point
+│   ├── core/
+│   │   └── dependencies.py       # FastAPI dependency providers
 │   ├── database/
-│   │   └── database.py         # Database configuration and connection
-│   ├── models/                 # SQLAlchemy ORM models
-│   │   ├── __init__.py
-│   │   ├── order.py           # Order model
-│   │   └── user.py            # User model
-│   ├── schemas/               # Pydantic schemas for validation
-│   │   ├── order.py           # Order request/response schemas
-│   │   └── user.py            # User request/response schemas
-│   ├── repositories/          # Data access layer
+│   │   └── database.py           # SQLAlchemy engine and session setup
+│   ├── exceptions/
+│   │   ├── custom_exceptions.py  # Application exception classes
+│   │   └── handlers.py           # Global exception handlers
+│   ├── models/                   # SQLAlchemy ORM models
+│   │   ├── order.py              # Order model
+│   │   └── user.py               # User model
+│   ├── schemas/                  # Pydantic schemas for validation
+│   │   ├── order.py              # Order request/response schemas
+│   │   └── user.py               # User request/response schemas
+│   ├── repositories/             # Data access layer
 │   │   ├── order_repository.py
 │   │   └── user_repository.py
-│   ├── services/              # Business logic layer
+│   ├── services/                 # Business logic layer
 │   │   ├── order_service.py
 │   │   └── user_service.py
-│   └── routers/               # API route handlers
-│       ├── orders.py          # Order endpoints
-│       └── users.py           # User endpoints
+│   ├── routers/                  # API route handlers
+│   │   ├── orders.py             # Order endpoints
+│   │   └── users.py              # User endpoints
+│   └── utils/
+│       └── decorators.py         # Helpers such as logging decorators
 ```
 
 ### Layer Breakdown
@@ -44,6 +52,7 @@ ordermanagement/
 - **Repositories**: Handle database operations
 - **Models**: Define database table structures
 - **Schemas**: Define API request/response validation
+- **Exceptions**: Convert business errors into consistent API responses
 - **Database**: Configuration and connection management
 
 ## Installation
@@ -59,7 +68,7 @@ ordermanagement/
    cd ordermanagement
    ```
 
-2. **Create a virtual environment** (optional but recommended)
+2. **Create and activate a virtual environment** (optional but recommended)
    ```bash
    python -m venv venv
    source venv/bin/activate  # On Windows: venv\Scripts\activate
@@ -67,16 +76,22 @@ ordermanagement/
 
 3. **Install dependencies**
    ```bash
-   pip install fastapi uvicorn sqlalchemy python-dotenv
+   pip install -r requirements.txt
+   ```
+
+4. **Configure the database**
+   Create a `.env` file or export `DATABASE_URL` before running the app.
+   Example:
+   ```bash
+   export DATABASE_URL="postgresql://user:password@localhost:5432/dbname"
    ```
 
 ## Running the Application
 
-Start the development server:
+Start the development server from the repository root:
 
 ```bash
-cd app
-python -m uvicorn main:app --reload
+python -m uvicorn app.main:app --reload
 ```
 
 The API will be available at `http://localhost:8000`
@@ -85,6 +100,23 @@ The API will be available at `http://localhost:8000`
 
 - **Swagger UI**: http://localhost:8000/docs
 - **ReDoc**: http://localhost:8000/redoc
+
+## API Endpoints
+
+### Users
+- `POST /users/` - Create a new user
+- `GET /users/` - Get all users
+- `GET /users/{user_id}` - Get a user by ID
+- `PUT /users/{user_id}` - Update a user
+- `DELETE /users/{user_id}` - Delete a user
+
+### Orders
+- `POST /orders/` - Create a new order
+- `GET /orders/` - Get all orders
+- `GET /orders/{order_id}` - Get an order by ID
+- `PUT /orders/{order_id}` - Update an order
+- `DELETE /orders/{order_id}` - Delete an order
+- `GET /orders/user/{user_id}` - Get orders for a specific user
 
 ## Key Concepts Demonstrated
 
@@ -97,11 +129,11 @@ Encapsulating business logic separate from HTTP handling for reusability across 
 ### 3. **Schema Validation**
 Using Pydantic models to validate and serialize API data automatically.
 
-### 4. **Async/Await**
-FastAPI's support for asynchronous request handling for improved performance.
+### 4. **Dependency Injection**
+FastAPI's dependency system is used to inject database sessions and services.
 
-### 5. **Dependency Injection**
-FastAPI's built-in dependency system for managing database sessions and other resources.
+### 5. **Custom Exception Handling**
+Application-defined exceptions are translated into JSON responses with consistent status codes.
 
 ## Learning Goals
 
@@ -117,7 +149,7 @@ This project demonstrates:
 - Add authentication and authorization
 - Implement comprehensive error handling
 - Add unit and integration tests
-- Add database migrations with Alembic
+- Support database migrations with Alembic
 - Add logging
 - Add API rate limiting
 - Deploy to production
@@ -128,6 +160,7 @@ This project demonstrates:
 - **SQLAlchemy**: SQL toolkit and ORM
 - **Pydantic**: Data validation using Python type annotations
 - **Uvicorn**: ASGI web server
+- **python-dotenv**: Environment variable loading
 
 ## Resources
 
