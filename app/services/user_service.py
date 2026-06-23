@@ -10,6 +10,7 @@ Responsibilities:
 The service should NOT know anything about FastAPI or HTTP.
 """
 
+from app.utils.decorators import log_execution_time
 from sqlalchemy.orm import Session
 
 from app.repositories.user_repository import UserRepository
@@ -34,6 +35,7 @@ class UserService:
     # ----------------------------------------------------
     # Create User
     # ----------------------------------------------------
+    @log_execution_time
     def create_user(
         self,
         db: Session,
@@ -58,6 +60,8 @@ class UserService:
     # ----------------------------------------------------
     # Get User
     # ----------------------------------------------------
+    @log_execution_time
+
     def get_user(
         self,
         db: Session,
@@ -77,6 +81,7 @@ class UserService:
     # ----------------------------------------------------
     # Get All Users
     # ----------------------------------------------------
+    @log_execution_time
     def get_all_users(
         self,
         db: Session
@@ -87,6 +92,7 @@ class UserService:
     # ----------------------------------------------------
     # Update User
     # ----------------------------------------------------
+    @log_execution_time
     def update_user(
         self,
         db: Session,
